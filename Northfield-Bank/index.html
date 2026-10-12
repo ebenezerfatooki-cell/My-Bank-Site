@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northfield Bank</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-loader" id="pageLoader" role="status" aria-live="polite" aria-busy="true">
+  <span class="loader-spinner" aria-hidden="true"></span>
+  <span id="pageLoaderText">Loading Northfield Bank...</span>
+</div>
+<div class="top">Northfield <span>Bank</span></div>
+<main>
+<div class="warn hidden" id="cfgWarn">Firebase is not set up yet. Paste your project keys into <b>firebase-config.js</b>.</div>
+
+<section class="card" id="v-login">
+  <h1>Welcome back</h1>
+  <p class="sub">Sign in to your account.</p>
+  <form id="f-login" novalidate>
+    <label for="l-email">Email</label>
+    <input id="l-email" type="email" autocomplete="email">
+    <label for="l-pass">Password</label>
+    <input id="l-pass" type="password" autocomplete="current-password">
+    <div class="msg" id="e-login" role="alert"></div>
+    <button class="btn" type="submit">Sign in</button>
+    <button class="btn alt hidden" id="resendLogin" type="button">Resend verification email</button>
+  </form>
+  <div class="switch">New to Northfield? <button class="link" data-go="signup">Create account</button></div>
+</section>
+
+<section class="card hidden" id="v-signup">
+  <h1>Create account</h1>
+  <p class="sub">Fill in your details to get started.</p>
+  <form id="f-signup" novalidate>
+    <label for="s-name">Full name</label><input id="s-name" autocomplete="name">
+    <label for="s-phone">Phone number</label><input id="s-phone" type="tel" autocomplete="tel" placeholder="08012345678">
+    <label for="s-email">Email address</label><input id="s-email" type="email" autocomplete="email">
+    <label for="s-dob">Date of birth</label><input id="s-dob" type="date">
+    <label for="s-gender">Gender</label>
+    <select id="s-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select>
+    <label for="s-addr">Home address</label><input id="s-addr" autocomplete="street-address">
+    <label for="s-nin">NIN (11 digits)</label><input id="s-nin" inputmode="numeric" maxlength="11">
+    <label for="s-pass">Password</label><input id="s-pass" type="password" autocomplete="new-password">
+    <label for="s-pass2">Confirm password</label><input id="s-pass2" type="password" autocomplete="new-password">
+    <div class="msg" id="e-signup" role="alert"></div>
+    <button class="btn" id="signupBtn" type="submit">Create account</button>
+  </form>
+  <div class="switch">Already have an account? <button class="link" data-go="login">Sign in</button></div>
+</section>
+
+<section class="card hidden" id="v-email">
+  <h1>Check your email</h1>
+  <p class="sub">We sent a verification link to <b id="v-addr"></b>. Open it, then come back and tap the button below. Check your spam folder if you don't see it.</p>
+  <div class="msg" id="e-email" role="alert"></div>
+  <button class="btn" id="verified" type="button">I've verified my email</button>
+  <button class="btn alt" id="resend" type="button">Resend email</button>
+</section>
+
+<section class="card hidden" id="v-face">
+  <h1>Face verification</h1>
+  <p class="sub">Last step before your account is created. Look straight at the camera in good light, then tap Verify.</p>
+  <div class="cam"><video id="cam" autoplay playsinline muted></video></div>
+  <div class="msg" id="e-face" role="alert"></div>
+  <button class="btn" id="snap" type="button">Verify my face</button>
+  <button class="btn alt" id="selfieBtn" type="button">Camera not working? Take a selfie instead</button>
+  <input id="selfie" type="file" accept="image/*" capture="user" class="hidden">
+  <button class="btn alt" id="cancel" type="button">Cancel</button>
+</section>
+
+<section class="hidden" id="v-dash">
+  <div class="dhead"><span class="av" id="d-av">N</span><span>Hi, <b id="d-name"></b></span></div>
+  <div class="bcard">
+    <div class="brow"><span>Available balance</span><button class="eye" id="eye" type="button" aria-label="Hide or show balance">👁</button></div>
+    <div class="bal" id="d-bal">&#8358;0.00</div>
+    <div class="loan" id="d-loan"></div>
+    <div class="brow"><small>Account no. <b id="d-acct"></b></small><button class="addm" type="button" data-svc="fund">+ Add Money</button></div>
+  </div>
+  <div class="last"><span id="d-lasttxt">No transactions yet</span><button class="link" id="toHist" type="button">Transactions &rsaquo;</button></div>
+  <div class="msg ok" id="d-note" role="status"></div>
+  <div class="panel grid4">
+    <button class="tile" data-svc="transfer" data-bank="northfield"><i>👤</i>To Northfield</button>
+    <button class="tile" data-svc="transfer"><i>🏛️</i>To Bank</button>
+    <button class="tile" data-svc="save"><i>🐷</i>Save</button>
+    <button class="tile" data-svc="loan"><i>💰</i>Loan</button>
+  </div>
+  <div class="panel grid4">
+    <button class="tile" data-svc="airtime"><i>📱</i>Airtime</button>
+    <button class="tile" data-svc="data"><i>📶</i>Data</button>
+    <button class="tile" data-svc="betting"><i>⚽</i>Betting</button>
+    <button class="tile" data-svc="tv"><i>📺</i>TV</button>
+    <button class="tile" data-svc="electricity"><i>💡</i>Electricity</button>
+    <button class="tile" data-svc="wealth"><i>📈</i>Wealth</button>
+    <button class="tile" data-svc="repay"><i>↩️</i>Repay loan</button>
+    <button class="tile" data-svc="invite"><i>🎁</i>Invite</button>
+  </div>
+  <div class="promo"><div><b>Fixed Savings</b><br><small>Lock money and earn up to 25% a year.</small></div><button class="go" type="button" data-svc="wealth">Go</button></div>
+  <button class="support-card" type="button" data-support><span class="support-icon">💬</span><span><b>Customer Service</b><small>Chat with Northfield Support</small></span><strong>›</strong></button>
+  <div class="panel" id="d-histbox"><h2>Transaction history</h2><ul id="d-hist"></ul></div>
+  <nav class="bnav" aria-label="Main">
+    <button type="button" data-nav="home"><i>🏠</i>Home</button>
+    <button type="button" data-svc="rewards"><i>🎯</i>Rewards</button>
+    <button type="button" data-svc="wealth"><i>📈</i>Wealth</button>
+    <button type="button" data-svc="card"><i>💳</i>Cards</button>
+    <button type="button" data-svc="me"><i>👤</i>Me</button>
+  </nav>
+</section>
+
+<section class="card hidden" id="v-receipt" aria-labelledby="receipt-title">
+  <h1 id="receipt-title">Transaction receipt</h1>
+  <p class="sub" id="receipt-message"></p>
+  <dl class="receipt-details">
+    <div><dt>Reference</dt><dd id="r-ref"></dd></div>
+    <div><dt>Date</dt><dd id="r-date"></dd></div>
+    <div><dt>Customer</dt><dd id="r-name"></dd></div>
+    <div><dt>Account number</dt><dd id="r-account"></dd></div>
+    <div><dt>Transaction</dt><dd id="r-title"></dd></div>
+    <div><dt>Details</dt><dd id="r-detail"></dd></div>
+    <div><dt>Direction</dt><dd id="r-direction"></dd></div>
+    <div><dt>Amount</dt><dd id="r-amount"></dd></div>
+    <div><dt>Status</dt><dd>Successful</dd></div>
+  </dl>
+  <div class="receipt-actions">
+    <button class="btn" id="receipt-print" type="button">Print receipt</button>
+    <button class="btn alt" id="receipt-done" type="button">Return to account</button>
+  </div>
+</section>
+
+<section class="card hidden support-view" id="v-support">
+  <div class="support-head"><button class="chat-back" id="chat-back" type="button">‹</button><div><h1 id="chat-name">Northfield Support</h1><p id="chat-status">● Online · Customer Service</p></div></div>
+  <div class="chat-help">For your security, never send your password, transfer PIN, full NIN, or OTP in chat.</div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <form class="chat-form" id="chat-form">
+    <input id="chat-input" type="text" maxlength="1000" placeholder="Type your message…" autocomplete="off">
+    <button id="chat-send" type="submit" aria-label="Send message">➤</button>
+  </form>
+  <div class="msg" id="e-chat" role="alert"></div>
+</section>
+
+<section class="card hidden" id="v-svc">
+  <button class="chat-back svc-back-arrow" id="svc-back" type="button" aria-label="Go back">&lt;</button>
+  <h1 id="svc-title"></h1>
+  <div class="svc-info" id="svc-info"></div>
+  <form id="svc-form" novalidate>
+    <div id="svc-fields"></div>
+    <div id="account-lookup" class="account-lookup hidden" aria-live="polite">
+      <label for="account-name">Verified account name</label>
+      <input id="account-name" type="text" readonly>
+      <div class="msg" id="account-lookup-status" role="status"></div>
+    </div>
+    <div class="msg" id="e-svc" role="alert"></div>
+    <button class="btn" id="svc-go" type="submit">Continue</button>
+  </form>
+</section>
+</main>
+
+<script>
+window.addEventListener("error",function(e){
+  var b=document.getElementById("cfgWarn"); if(!b) return;
+  b.classList.remove("hidden");
+  b.textContent="Page error: "+(e.message||"a script file failed to load")+" Press F12 and open Console for details.";
+},true);
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

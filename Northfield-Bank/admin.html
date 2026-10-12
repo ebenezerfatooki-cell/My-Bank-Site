@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northfield Admin</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.admin-tabs{display:flex;gap:8px;margin:12px 0}.tab{flex:1;padding:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;cursor:pointer;font-weight:600}.tab.active{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}.chat-layout{display:grid;grid-template-columns:1fr;gap:12px}.chat-list{display:grid;gap:8px}.chat-item{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px;cursor:pointer}.chat-item b{display:block}.chat-item small{display:block;color:var(--muted);margin-top:3px}.chat-item.unread{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}.admin-chat{border:1px solid var(--line);border-radius:14px;overflow:hidden}.admin-chat-head{display:flex;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--line)}.admin-chat-head small{display:block;color:var(--muted);font-size:12px}.admin-messages{height:420px;overflow:auto;background:var(--bg);padding:12px}.admin-bubble{display:flex;margin:7px 0}.admin-bubble.customer{justify-content:flex-start}.admin-bubble.admin{justify-content:flex-end}.admin-bubble span{max-width:75%;padding:9px 11px;border-radius:14px;background:var(--surface);border:1px solid var(--line);white-space:pre-wrap;word-break:break-word}.admin-bubble.admin span{background:var(--brand);color:var(--brand-ink);border:0}.admin-bubble small{display:block;font-size:9px;opacity:.7;text-align:right;margin-top:3px}.admin-chat-form{display:flex;gap:8px;padding:10px}.admin-chat-form input{margin:0;flex:1}.admin-chat-form button{border:0;border-radius:9px;background:var(--brand);color:var(--brand-ink);padding:0 15px;font-weight:700;cursor:pointer}@media(min-width:700px){.chat-layout{grid-template-columns:280px 1fr}}
+
+main{max-width:760px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.head h1{margin:0}
+.head small{color:var(--muted);font-size:15px;font-weight:500}
+.sm{width:auto;margin:0;padding:10px 16px;font-size:14px}
+#search{margin:14px 0}
+.ucard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.ucard.fresh{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand)}
+.ucard h3{margin:0 0 8px;font-size:18px}
+.urow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+.urow span{color:var(--muted);flex:none}
+.urow b{text-align:right;word-break:break-word;font-weight:600}
+.reveal{background:none;border:0;color:var(--brand);font:600 13px system-ui,sans-serif;cursor:pointer;padding:0 0 0 8px}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--brand);color:var(--brand-ink);padding:12px 18px;border-radius:12px;font-weight:600;z-index:10;max-width:90%}
+</style>
+</head>
+<body>
+<div class="page-loader" id="pageLoader" role="status" aria-live="polite" aria-busy="true">
+  <span class="loader-spinner" aria-hidden="true"></span>
+  <span id="pageLoaderText">Loading Northfield Admin...</span>
+</div>
+<div class="top">Northfield <span>Admin</span></div>
+<main>
+  <section class="card" id="v-login">
+    <h1>Admin sign in</h1>
+    <p class="sub">Only approved admin emails can open this page.</p>
+    <form id="f-admin" novalidate>
+      <label for="a-email">Email</label>
+      <input id="a-email" type="email" autocomplete="email">
+      <label for="a-pass">Password</label>
+      <input id="a-pass" type="password" autocomplete="current-password">
+      <div class="msg" id="a-msg" role="alert"></div>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+  </section>
+
+  <section class="hidden" id="v-list">
+    <div class="head"><h1>Accounts <small id="count"></small></h1><button class="btn alt sm" id="a-out" type="button">Sign out</button></div>
+    <div class="admin-tabs"><button class="tab active" id="tab-accounts" type="button">Accounts</button><button class="tab" id="tab-chats" type="button">Customer chats</button></div>
+    <input id="search" type="search" placeholder="Search name, email, phone or account number">
+    <div id="list"></div>
+  </section>
+
+  <section class="hidden" id="v-chats">
+    <div class="head"><h1>Customer chats <small id="chat-count"></small></h1><button class="btn alt sm" id="back-accounts" type="button">Accounts</button></div>
+    <div class="chat-layout"><div id="chat-list" class="chat-list"></div><div class="admin-chat hidden" id="admin-chat"><div class="admin-chat-head"><button id="chat-close" class="sm" type="button">←</button><div><b id="selected-name">Customer</b><small id="selected-meta"></small></div></div><div id="admin-messages" class="admin-messages"></div><form id="admin-chat-form" class="admin-chat-form"><input id="admin-chat-input" maxlength="1000" placeholder="Reply to customer…"><button type="submit">Send</button></form></div></div>
+  </section>
+</main>
+<div class="toast hidden" id="toast" role="status"></div>
+<script type="module" src="admin.js"></script>
+</body>
+</html>
