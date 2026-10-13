@@ -1,5 +1,5 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,createUserWithEmailAndPassword,sendEmailVerification,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,createUserWithEmailAndPassword,sendEmailVerification,signInWithEmailAndPassword,signOut,onAuthStateChanged,setPersistence,browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getFirestore,doc,setDoc,getDoc,serverTimestamp,collection,query,where,orderBy,limit,getDocs,runTransaction,addDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
@@ -8,7 +8,31 @@ const firebaseConfig = cfg.firebaseConfig || {};
 const settings = {requireEmailVerification:false, requireFaceCheck:true, ...(cfg.settings||{})};
 
 const $ = i => document.getElementById(i);
+const THEME_KEY = "northfield-theme";
+function getTheme(){
+  try{ return localStorage.getItem(THEME_KEY) || "system"; }
+  catch(e){ return "system"; }
+}
+function applyTheme(theme){
+  if(theme === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.dataset.theme = theme;
+  try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+  document.querySelectorAll("[data-theme-value]").forEach(button => {
+    button.setAttribute("aria-pressed", String(button.dataset.themeValue === theme));
+  });
+}
+applyTheme(getTheme());
+document.querySelectorAll("[data-password-target]").forEach(button => button.addEventListener("click", () => {
+  const input = $(button.dataset.passwordTarget);
+  const visible = input.type === "password";
+  input.type = visible ? "text" : "password";
+  button.textContent = visible ? "🙈" : "👁";
+  button.setAttribute("aria-label", (visible ? "Hide" : "Show") + " password");
+  button.setAttribute("aria-pressed", String(visible));
+  button.title = (visible ? "Hide" : "Show") + " password";
+}));
 let activeLoads = 0, loaderTimer = null;
+const MAX_LOADER_MS = 8000;
 function beginLoading(text){
   const overlay = $("pageLoader");
   window.clearTimeout(loaderTimer);
@@ -17,24 +41,28 @@ function beginLoading(text){
   overlay.setAttribute("aria-busy", "true");
   $("pageLoaderText").textContent = text;
   let ended = false;
-  return () => {
+  const stop = () => {
     if(ended) return;
     ended = true;
+    window.clearTimeout(maxTimer);
     activeLoads = Math.max(0, activeLoads - 1);
     if(!activeLoads) loaderTimer = window.setTimeout(() => {
       if(!activeLoads){ overlay.classList.add("hidden"); overlay.setAttribute("aria-busy", "false"); }
     }, 120);
   };
+  const maxTimer = window.setTimeout(stop, MAX_LOADER_MS);
+  return stop;
 }
 const finishStartupLoading = beginLoading("Loading Northfield Bank...");
-const views = ["login","signup","email","face","dash","svc","support","receipt"];
+const views = ["login","signup","email","face","dash","settings","svc","support","receipt"];
 let configured = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("YOUR_");
-let auth, db, listNigerianBanks, resolveNigerianAccount;
+let auth, db, listNigerianBanks, resolveNigerianAccount, persistenceReady = Promise.resolve();
 try{
   const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
+  persistenceReady = setPersistence(auth, browserLocalPersistence).catch(() => {});
   const functions = getFunctions(app);
-  listNigerianBanks = httpsCallable(functions, "listNigerianBanks");
-  resolveNigerianAccount = httpsCallable(functions, "resolveNigerianAccount");
+  listNigerianBanks = httpsCallable(functions, "listNigerianBanks", {timeout:10000});
+  resolveNigerianAccount = httpsCallable(functions, "resolveNigerianAccount", {timeout:10000});
 }catch(e){ configured = false; }
 if(!configured){
   const w = $("cfgWarn"); w.classList.remove("hidden");
@@ -87,6 +115,7 @@ async function finishSignup(){
   const stopLoading = beginLoading("Creating your account...");
   $("signupBtn").disabled = true;
   try{
+    await persistenceReady;
     const cred = await createUserWithEmailAndPassword(auth, d.email, p);
     const acct = String(Math.floor(1000000000+Math.random()*9000000000));
     await setDoc(doc(db,"users",cred.user.uid), {...d, acct, balance:0, loan:0, createdAt: serverTimestamp()});
@@ -130,6 +159,7 @@ $("f-login").addEventListener("submit", async e => {
   if(!em||!pw) return msg("e-login","Enter your email and password.");
   const stopLoading = beginLoading("Signing in...");
   try{
+    await persistenceReady;
     const cred = await signInWithEmailAndPassword(auth, em, pw);
     await cred.user.reload();
     if(settings.requireEmailVerification && !cred.user.emailVerified){
@@ -154,11 +184,10 @@ function stopCam(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=
 function startFace(){
   show("face"); msg("e-face","");
   if(!navigator.mediaDevices?.getUserMedia) return msg("e-face","Camera not available. Use the selfie option below.");
-  const stopLoading = beginLoading("Requesting camera access...");
+  msg("e-face","Waiting for camera permission...",true);
   navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false})
-    .then(s => { stream=s; $("cam").srcObject=s; })
+    .then(s => { stream=s; $("cam").srcObject=s; msg("e-face","Camera ready.",true); })
     .catch(() => msg("e-face","Camera access was blocked. Allow camera permission, or use the selfie option below."))
-    .finally(stopLoading);
 }
 function detect(src, ok){
   if("FaceDetector" in window){
@@ -245,7 +274,11 @@ async function lookupAcct(a){
   const q = await getDocs(query(collection(db,"users"), where("acct","==",a), limit(1)));
   return q.empty ? null : {ref:q.docs[0].ref, name:q.docs[0].data().name};
 }
-async function doLogout(){ await signOut(auth); uid = null; $("l-pass").value=""; msg("e-login",""); show("login"); }
+async function doLogout(){
+  const stopLoading = beginLoading("Signing out...");
+  try{ await signOut(auth); uid = null; $("l-pass").value=""; msg("e-login",""); show("login"); }
+  finally{ stopLoading(); }
+}
 
 async function refresh(){
   profile = (await getDoc(meRef())).data();
@@ -277,6 +310,33 @@ async function showDash(){
   try{ await refresh(); }catch(err){ msg("d-note", nice(err)); }
   finally{ stopLoading(); }
 }
+
+if(auth){
+  let initialAuthCheck = true;
+  onAuthStateChanged(auth, async user => {
+    if(!initialAuthCheck) return;
+    initialAuthCheck = false;
+    try{
+      await persistenceReady;
+      if(!user){ show("login"); return; }
+      if(settings.requireEmailVerification && !user.emailVerified){
+        await user.reload();
+        if(!user.emailVerified){
+          await signOut(auth);
+          show("login");
+          msg("e-login", "Verify your email first. Open the link we sent you.");
+          return;
+        }
+      }
+      uid = user.uid;
+      await showDash();
+    }catch(err){
+      uid = null;
+      show("login");
+      msg("e-login", nice(err));
+    }finally{ finishStartupLoading(); }
+  });
+} else finishStartupLoading();
 
 // Moves money safely: checks balances, updates them, and logs the transaction
 async function post({dir, amount, type, title, detail="", to=null, loanDelta=0, saveDelta=0, fixedDelta=0, rewardsDelta=0, patch=null}){
@@ -310,7 +370,29 @@ $("eye").addEventListener("click", () => { hide = !hide; $("eye").textContent = 
 function setLast(t){ $("d-lasttxt").textContent = t ? t.title + " · " + (t.dir === "credit" ? "+" : "-") + naira(t.amount) : "No transactions yet"; }
 const toHist = () => $("d-histbox").scrollIntoView({behavior:"smooth"});
 $("toHist").addEventListener("click", toHist);
-document.querySelectorAll("[data-nav]").forEach(b => b.addEventListener("click", () => window.scrollTo({top:0,behavior:"smooth"})));
+document.querySelectorAll("[data-nav]").forEach(b => b.addEventListener("click", () => {
+  if(b.dataset.nav === "settings"){
+    $("settings-name").textContent = profile.name || "-";
+    $("settings-email").textContent = profile.email || "-";
+    $("settings-phone").textContent = profile.phone || "-";
+    $("settings-account-number").textContent = profile.acct || "-";
+    $("settings-email-status").textContent = auth.currentUser?.emailVerified ? "Verified" : "Not verified";
+    applyTheme(getTheme());
+    show("settings");
+    return;
+  }
+  show("dash"); window.scrollTo({top:0,behavior:"smooth"});
+}));
+document.querySelectorAll("[data-theme-value]").forEach(button => button.addEventListener("click", () => applyTheme(button.dataset.themeValue)));
+$("settings-back").addEventListener("click", () => show("dash"));
+$("settings-signout").addEventListener("click", async () => {
+  const button = $("settings-signout");
+  button.disabled = true;
+  msg("settings-message", "");
+  try{ await doLogout(); }
+  catch(err){ msg("settings-message", nice(err)); }
+  finally{ button.disabled = false; }
+});
 const summary = () => [profile.savings>0 && "Savings "+naira(profile.savings), profile.fixed>0 && "Fixed "+naira(profile.fixed), profile.loan>0 && "Loan owed "+naira(profile.loan), profile.rewards>0 && "Cashback "+naira(profile.rewards)].filter(Boolean).join(" · ");
 
 const AMT = {id:"amt", label:"Amount (₦)", digits:true, max:9, ph:"5000"};
@@ -514,16 +596,18 @@ async function verifyTransferAccount(){
 }
 async function loadNigerianBanks(select){
   if(select.dataset.loaded) return;
-  const stopLoading = beginLoading("Loading bank list...");
+  const status = $("account-lookup-status");
+  if(!status.textContent) msg("account-lookup-status", "Loading supported banks...", true);
   try{
     if(!listNigerianBanks) throw new Error("Bank list is not available.");
     const result = await listNigerianBanks();
     if(!select.isConnected) return;
     result.data.banks.forEach(bank => select.add(new Option(bank.name, bank.code)));
     select.dataset.loaded = "true";
+    if(status.textContent === "Loading supported banks...") msg("account-lookup-status", "");
   }catch(e){
     if(select.isConnected) msg("account-lookup-status", "Could not load external banks. Northfield Bank is still available.");
-  }finally{ stopLoading(); }
+  }
 }
 function renderReceipt(receipt, message){
   $("receipt-message").textContent = message;
@@ -600,5 +684,4 @@ $("svc-form").addEventListener("submit", async e => {
 });
 $("receipt-print").addEventListener("click", () => window.print());
 $("receipt-done").addEventListener("click", () => showDash());
-finishStartupLoading();
 

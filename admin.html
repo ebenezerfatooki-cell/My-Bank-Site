@@ -38,7 +38,7 @@ main{max-width:760px}
       <label for="a-email">Email</label>
       <input id="a-email" type="email" autocomplete="email">
       <label for="a-pass">Password</label>
-      <input id="a-pass" type="password" autocomplete="current-password">
+      <div class="password-field"><input id="a-pass" type="password" autocomplete="current-password"><button class="password-toggle" type="button" data-password-target="a-pass" aria-label="Show password" aria-pressed="false" title="Show password">👁</button></div>
       <div class="msg" id="a-msg" role="alert"></div>
       <button class="btn" type="submit">Sign in</button>
     </form>
@@ -53,7 +53,7 @@ main{max-width:760px}
 
   <section class="hidden" id="v-chats">
     <div class="head"><h1>Customer chats <small id="chat-count"></small></h1><button class="btn alt sm" id="back-accounts" type="button">Accounts</button></div>
-    <div class="chat-layout"><div id="chat-list" class="chat-list"></div><div class="admin-chat hidden" id="admin-chat"><div class="admin-chat-head"><button id="chat-close" class="sm" type="button">←</button><div><b id="selected-name">Customer</b><small id="selected-meta"></small></div></div><div id="admin-messages" class="admin-messages"></div><form id="admin-chat-form" class="admin-chat-form"><input id="admin-chat-input" maxlength="1000" placeholder="Reply to customer…"><button type="submit">Send</button></form></div></div>
+    <div class="chat-layout"><div id="chat-list" class="chat-list"></div><div class="admin-chat hidden" id="admin-chat"><div class="admin-chat-head"><button id="chat-close" class="chat-back sm" type="button" aria-label="Back to customer chats" title="Back to customer chats">←</button><div><b id="selected-name">Customer</b><small id="selected-meta"></small></div></div><div id="admin-messages" class="admin-messages"></div><form id="admin-chat-form" class="admin-chat-form"><input id="admin-chat-input" maxlength="1000" placeholder="Reply to customer…"><button type="submit">Send</button></form></div></div>
   </section>
 </main>
 <div class="toast hidden" id="toast" role="status"></div>

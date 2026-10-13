@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Northfield Bank</title>
+<script>
+try{var savedTheme=localStorage.getItem("northfield-theme");if(savedTheme==="light"||savedTheme==="dark")document.documentElement.dataset.theme=savedTheme;}catch(e){}
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,7 +25,7 @@
     <label for="l-email">Email</label>
     <input id="l-email" type="email" autocomplete="email">
     <label for="l-pass">Password</label>
-    <input id="l-pass" type="password" autocomplete="current-password">
+    <div class="password-field"><input id="l-pass" type="password" autocomplete="current-password"><button class="password-toggle" type="button" data-password-target="l-pass" aria-label="Show password" aria-pressed="false" title="Show password">👁</button></div>
     <div class="msg" id="e-login" role="alert"></div>
     <button class="btn" type="submit">Sign in</button>
     <button class="btn alt hidden" id="resendLogin" type="button">Resend verification email</button>
@@ -42,8 +45,8 @@
     <select id="s-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select>
     <label for="s-addr">Home address</label><input id="s-addr" autocomplete="street-address">
     <label for="s-nin">NIN (11 digits)</label><input id="s-nin" inputmode="numeric" maxlength="11">
-    <label for="s-pass">Password</label><input id="s-pass" type="password" autocomplete="new-password">
-    <label for="s-pass2">Confirm password</label><input id="s-pass2" type="password" autocomplete="new-password">
+    <label for="s-pass">Password</label><div class="password-field"><input id="s-pass" type="password" autocomplete="new-password"><button class="password-toggle" type="button" data-password-target="s-pass" aria-label="Show password" aria-pressed="false" title="Show password">👁</button></div>
+    <label for="s-pass2">Confirm password</label><div class="password-field"><input id="s-pass2" type="password" autocomplete="new-password"><button class="password-toggle" type="button" data-password-target="s-pass2" aria-label="Show password" aria-pressed="false" title="Show password">👁</button></div>
     <div class="msg" id="e-signup" role="alert"></div>
     <button class="btn" id="signupBtn" type="submit">Create account</button>
   </form>
@@ -70,7 +73,7 @@
 </section>
 
 <section class="hidden" id="v-dash">
-  <div class="dhead"><span class="av" id="d-av">N</span><span>Hi, <b id="d-name"></b></span></div>
+  <div class="dhead"><span class="av" id="d-av">N</span><span>Hi, <b id="d-name"></b></span><div class="dashboard-actions"><button class="support-shortcut" type="button" data-support aria-label="Open customer service chat" title="Customer service"><span aria-hidden="true">💬</span></button><button class="settings-shortcut" type="button" data-nav="settings" aria-label="Open settings" title="Settings"><span aria-hidden="true">⚙</span></button></div></div>
   <div class="bcard">
     <div class="brow"><span>Available balance</span><button class="eye" id="eye" type="button" aria-label="Hide or show balance">👁</button></div>
     <div class="bal" id="d-bal">&#8358;0.00</div>
@@ -96,15 +99,39 @@
     <button class="tile" data-svc="invite"><i>🎁</i>Invite</button>
   </div>
   <div class="promo"><div><b>Fixed Savings</b><br><small>Lock money and earn up to 25% a year.</small></div><button class="go" type="button" data-svc="wealth">Go</button></div>
-  <button class="support-card" type="button" data-support><span class="support-icon">💬</span><span><b>Customer Service</b><small>Chat with Northfield Support</small></span><strong>›</strong></button>
   <div class="panel" id="d-histbox"><h2>Transaction history</h2><ul id="d-hist"></ul></div>
   <nav class="bnav" aria-label="Main">
     <button type="button" data-nav="home"><i>🏠</i>Home</button>
     <button type="button" data-svc="rewards"><i>🎯</i>Rewards</button>
     <button type="button" data-svc="wealth"><i>📈</i>Wealth</button>
     <button type="button" data-svc="card"><i>💳</i>Cards</button>
-    <button type="button" data-svc="me"><i>👤</i>Me</button>
+    <button type="button" data-nav="settings"><i>👤</i>Me</button>
   </nav>
+</section>
+
+<section class="card hidden" id="v-settings" aria-labelledby="settings-title">
+  <div class="settings-heading"><button class="chat-back" id="settings-back" type="button" aria-label="Back to account" title="Back to account">←</button><h1 id="settings-title">Settings</h1></div>
+  <section class="settings-block" aria-labelledby="settings-appearance-title">
+    <h2 id="settings-appearance-title">Appearance</h2>
+    <p class="sub">Choose how Northfield looks on this device.</p>
+    <div class="theme-options" role="group" aria-label="Color theme">
+      <button type="button" data-theme-value="light" aria-pressed="false">Light</button>
+      <button type="button" data-theme-value="dark" aria-pressed="false">Dark</button>
+      <button type="button" data-theme-value="system" aria-pressed="false">System</button>
+    </div>
+  </section>
+  <section class="settings-block" aria-labelledby="settings-account-title">
+    <h2 id="settings-account-title">Account</h2>
+    <dl class="settings-details">
+      <div><dt>Name</dt><dd id="settings-name"></dd></div>
+      <div><dt>Email</dt><dd id="settings-email"></dd></div>
+      <div><dt>Phone</dt><dd id="settings-phone"></dd></div>
+      <div><dt>Account number</dt><dd id="settings-account-number"></dd></div>
+      <div><dt>Email verification</dt><dd id="settings-email-status"></dd></div>
+    </dl>
+  </section>
+  <div class="msg" id="settings-message" role="alert"></div>
+  <button class="btn alt" id="settings-signout" type="button">Sign out</button>
 </section>
 
 <section class="card hidden" id="v-receipt" aria-labelledby="receipt-title">
@@ -128,7 +155,7 @@
 </section>
 
 <section class="card hidden support-view" id="v-support">
-  <div class="support-head"><button class="chat-back" id="chat-back" type="button">‹</button><div><h1 id="chat-name">Northfield Support</h1><p id="chat-status">● Online · Customer Service</p></div></div>
+  <div class="support-head"><button class="chat-back" id="chat-back" type="button" aria-label="Back to account" title="Back to account">←</button><div><h1 id="chat-name">Northfield Support</h1><p id="chat-status">● Online · Customer Service</p></div></div>
   <div class="chat-help">For your security, never send your password, transfer PIN, full NIN, or OTP in chat.</div>
   <div class="chat-messages" id="chat-messages"></div>
   <form class="chat-form" id="chat-form">
@@ -139,7 +166,7 @@
 </section>
 
 <section class="card hidden" id="v-svc">
-  <button class="chat-back svc-back-arrow" id="svc-back" type="button" aria-label="Go back">&lt;</button>
+  <button class="chat-back svc-back-arrow" id="svc-back" type="button" aria-label="Back to account" title="Back to account">←</button>
   <h1 id="svc-title"></h1>
   <div class="svc-info" id="svc-info"></div>
   <form id="svc-form" novalidate>

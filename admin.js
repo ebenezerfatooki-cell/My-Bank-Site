@@ -4,7 +4,17 @@ import {getFirestore,collection,query,orderBy,onSnapshot,doc,setDoc,addDoc,serve
 import * as cfg from "./firebase-config.js";
 
 const $ = i => document.getElementById(i);
+document.querySelectorAll("[data-password-target]").forEach(button => button.addEventListener("click", () => {
+  const input = $(button.dataset.passwordTarget);
+  const visible = input.type === "password";
+  input.type = visible ? "text" : "password";
+  button.textContent = visible ? "🙈" : "👁";
+  button.setAttribute("aria-label", (visible ? "Hide" : "Show") + " password");
+  button.setAttribute("aria-pressed", String(visible));
+  button.title = (visible ? "Hide" : "Show") + " password";
+}));
 let activeLoads = 0, loaderTimer = null;
+const MAX_LOADER_MS = 8000;
 function beginLoading(text){
   const overlay = $("pageLoader");
   window.clearTimeout(loaderTimer);
@@ -13,14 +23,17 @@ function beginLoading(text){
   overlay.setAttribute("aria-busy", "true");
   $("pageLoaderText").textContent = text;
   let ended = false;
-  return () => {
+  const stop = () => {
     if(ended) return;
     ended = true;
+    window.clearTimeout(maxTimer);
     activeLoads = Math.max(0, activeLoads - 1);
     if(!activeLoads) loaderTimer = window.setTimeout(() => {
       if(!activeLoads){ overlay.classList.add("hidden"); overlay.setAttribute("aria-busy", "false"); }
     }, 120);
   };
+  const maxTimer = window.setTimeout(stop, MAX_LOADER_MS);
+  return stop;
 }
 const finishStartupLoading = beginLoading("Checking admin session...");
 let chatErr = "";
